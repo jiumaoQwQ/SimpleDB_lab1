@@ -18,12 +18,26 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Catalog {
 
+    private HashMap<Integer,Table> hashTable;
+
+    private class Table{
+        public DbFile m_file;
+        public String m_name;
+        public String m_pk;
+
+        public Table(DbFile file, String name, String pkeyField) {
+            m_file = file;
+            m_name = name;
+            m_pk = pkeyField;
+        }
+    }
     /**
      * Constructor.
      * Creates a new, empty catalog.
      */
     public Catalog() {
         // some code goes here
+        hashTable = new HashMap<Integer,Table>();
     }
 
     /**
@@ -37,6 +51,8 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+        Table t = new Table(file,name,pkeyField);
+        hashTable.put(file.getId(), t);
     }
 
     public void addTable(DbFile file, String name) {
@@ -60,7 +76,16 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
-        return 0;
+        Integer res = null;
+        for(int key : hashTable.keySet()){
+            if(hashTable.get(key).m_name.equals(name)){
+                res = key;
+            }
+        }
+        if(res == null){
+            throw new NoSuchElementException();
+        }
+        return res;
     }
 
     /**
@@ -71,7 +96,11 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        Table table = hashTable.getOrDefault(tableid,null);
+        if(table == null){
+            throw new NoSuchElementException();
+        }
+        return table.m_file.getTupleDesc();
     }
 
     /**
@@ -82,27 +111,37 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        Table table = hashTable.getOrDefault(tableid,null);
+        if(table == null){
+            throw new NoSuchElementException();
+        }
+        return table.m_file;
     }
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        return null;
+        Table table = hashTable.getOrDefault(tableid,null);
+        if(table == null){
+            throw new NoSuchElementException();
+        }
+        return table.m_pk;
     }
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        return null;
+        return hashTable.keySet().iterator();
     }
 
     public String getTableName(int tableid) {
         // some code goes here
-        return null;
+        Table table = hashTable.getOrDefault(tableid,null);
+        return table.m_name;
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
+        hashTable.clear();
     }
     
     /**

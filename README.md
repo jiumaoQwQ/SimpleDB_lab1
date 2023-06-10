@@ -25,5 +25,5 @@ ant javadocs
 ~~~
 
 # ex1
-
+see src/java/simpledb/TupleDesc.java and src/java/simpledb/Tuple.java
 # ex2
