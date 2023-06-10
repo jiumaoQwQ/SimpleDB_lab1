@@ -1,10 +1,15 @@
 # SimpleDB lab1
 
 enviroment setup
+
+- OS : archlinux
+
+run the following command to install ant
 ~~~
-apt install ant
-apt install git
+pacmam -S 
 ~~~
+
+
 
 # ex1
 
