@@ -1,15 +1,28 @@
 # SimpleDB lab1
 
-enviroment setup
+This is my database final homework
+
+https://www.cs.hmc.edu/~beth/courses/cs133/fall2019/assignments/lab1.html
+
+# Enviroment setup
 
 - OS : archlinux
 
-run the following command to install ant
+run the following commands to install ant and git
 ~~~
-pacmam -S 
+pacman -S git
+pacman -S ant
 ~~~
 
+Then run the following command to download the repo
+~~~
+git clone https://github.com/jiumaoQwQ/SimpleDB_lab1.git
+~~~
 
+Finally, run the following command to check whether you are ok
+~~~
+ant javadocs
+~~~
 
 # ex1
 
