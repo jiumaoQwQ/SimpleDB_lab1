@@ -14,12 +14,12 @@ pacman -S git
 pacman -S ant
 ~~~
 
-Then run the following command to download the repo
+Then download the repo
 ~~~
 git clone https://github.com/jiumaoQwQ/SimpleDB_lab1.git
 ~~~
 
-Finally, run the following command to check whether you are ok
+Finally, check whether you are ok
 ~~~
 ant javadocs
 ~~~
@@ -27,3 +27,5 @@ ant javadocs
 # ex1
 see src/java/simpledb/TupleDesc.java and src/java/simpledb/Tuple.java
 # ex2
+see src/java/simpledb/Catalog.java
+# ex3

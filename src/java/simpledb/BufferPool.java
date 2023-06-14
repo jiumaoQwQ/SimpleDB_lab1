@@ -29,6 +29,9 @@ public class BufferPool {
     /** TODO for Lab 4: create instance of Lock Manager class. 
 	Be sure to instantiate it in the constructor. */
 
+    public final int numPages;
+    public final ConcurrentHashMap<Integer,Page> pageStore;
+
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -36,6 +39,8 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
+        this.numPages = numPages;
+        pageStore = new ConcurrentHashMap<Integer,Page>();
     }
     
     public static int getPageSize() {
@@ -73,7 +78,12 @@ public class BufferPool {
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        return null;
+        if(!pageStore.containsKey(pid.hashCode())){
+            DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            Page page = file.readPage(pid);
+            pageStore.put(pid.hashCode(), page);
+        }
+        return pageStore.get(pid.hashCode());
     }
 
     /**
