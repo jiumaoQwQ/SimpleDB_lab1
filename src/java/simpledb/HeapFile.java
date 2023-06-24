@@ -1,8 +1,8 @@
 package simpledb;
-
+ 
 import java.io.*;
 import java.util.*;
-
+ 
 /**
  * HeapFile is an implementation of a DbFile that stores a collection of tuples
  * in no particular order. Tuples are stored on pages, each of which is a fixed
@@ -14,10 +14,9 @@ import java.util.*;
  * @author Sam Madden
  */
 public class HeapFile implements DbFile {
-
-    private final File f;
+ 
+    private final File file;
     private final TupleDesc td;
-
     /**
      * Constructs a heap file backed by the specified file.
      * 
@@ -27,10 +26,10 @@ public class HeapFile implements DbFile {
      */
     public HeapFile(File f, TupleDesc td) {
         // some code goes here
-        this.f = f;
+        this.file = f;
         this.td = td;
     }
-
+ 
     /**
      * Returns the File backing this HeapFile on disk.
      * 
@@ -38,9 +37,9 @@ public class HeapFile implements DbFile {
      */
     public File getFile() {
         // some code goes here
-        return f;
+        return file;
     }
-
+ 
     /**
      * Returns an ID uniquely identifying this HeapFile. Implementation note:
      * you will need to generate this tableid somewhere to ensure that each
@@ -52,9 +51,9 @@ public class HeapFile implements DbFile {
      */
     public int getId() {
         // some code goes here
-        return f.getAbsoluteFile().hashCode();
+        return file.getAbsoluteFile().hashCode();
     }
-
+ 
     /**
      * Returns the TupleDesc of the table stored in this DbFile.
      * 
@@ -64,27 +63,56 @@ public class HeapFile implements DbFile {
         // some code goes here
         return td;
     }
-
+ 
     // see DbFile.java for javadocs
     public Page readPage(PageId pid) {
         // some code goes here
-        return null;
+        int tableId = pid.getTableId();
+        int pgNo = pid.getPageNumber();
+ 
+        RandomAccessFile f = null;
+        try{
+            f = new RandomAccessFile(file,"r");
+            if((pgNo+1)*BufferPool.getPageSize() > f.length()){
+                f.close();
+                throw new IllegalArgumentException(String.format("table %d page %d is invalid", tableId, pgNo));
+            }
+            byte[] bytes = new byte[BufferPool.getPageSize()];
+            f.seek(pgNo * BufferPool.getPageSize());
+            // big end
+            int read = f.read(bytes,0,BufferPool.getPageSize());
+            if(read != BufferPool.getPageSize()){
+                throw new IllegalArgumentException(String.format("table %d page %d read %d bytes", tableId, pgNo, read));
+            }
+            HeapPageId id = new HeapPageId(pid.getTableId(),pid.getPageNumber());
+            return new HeapPage(id,bytes);
+        }catch (IOException e){
+            e.printStackTrace();
+        }finally {
+            try{
+                f.close();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        throw new IllegalArgumentException(String.format("table %d page %d is invalid", tableId, pgNo));
     }
-
+ 
     // see DbFile.java for javadocs
     public void writePage(Page page) throws IOException {
         // some code goes here
         // not necessary for lab1
     }
-
+ 
     /**
      * Returns the number of pages in this HeapFile.
      */
     public int numPages() {
         // some code goes here
-        return 0;
+        int num = (int)Math.floor(file.length()*1.0/BufferPool.getPageSize());
+        return num;
     }
-
+ 
     // see DbFile.java for javadocs
     public ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
@@ -92,7 +120,7 @@ public class HeapFile implements DbFile {
         return null;
         // not necessary for lab1
     }
-
+ 
     // see DbFile.java for javadocs
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t) throws DbException,
             TransactionAbortedException {
@@ -100,12 +128,87 @@ public class HeapFile implements DbFile {
         return null;
         // not necessary for lab1
     }
-
+ 
     // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) {
         // some code goes here
-        return null;
+        return new HeapFileIterator(this,tid);
     }
-
+ 
+    private static final class HeapFileIterator implements DbFileIterator{
+        private final HeapFile heapFile;
+        private final TransactionId tid;
+        private Iterator<Tuple> it;
+        private int whichPage;
+ 
+        public HeapFileIterator(HeapFile file,TransactionId tid){
+            this.heapFile = file;
+            this.tid = tid;
+            it = null;
+        }
+        @Override
+        public void open() throws DbException, TransactionAbortedException {
+            // TODO Auto-generated method stub
+            whichPage = 0;
+            it = getPageTuples(whichPage);
+        }
+ 
+        private Iterator<Tuple> getPageTuples(int pageNumber) throws TransactionAbortedException, DbException{
+            if(pageNumber >= 0 && pageNumber < heapFile.numPages()){
+                HeapPageId pid = new HeapPageId(heapFile.getId(),pageNumber);
+                HeapPage page = (HeapPage)Database.getBufferPool().getPage(tid, pid, Permissions.READ_ONLY);
+                return page.iterator();
+            }else{
+                throw new DbException(String.format("heapfile %d does not contain page %d!", pageNumber,heapFile.getId()));
+            }
+        }
+ 
+        @Override
+        public boolean hasNext() throws DbException, TransactionAbortedException {
+            // TODO Auto-generated method stub
+            if(it == null){
+                throw new IllegalStateException();
+            }
+ 
+            if(!it.hasNext()){
+                if(whichPage < (heapFile.numPages()-1)){
+                    whichPage++;
+                    it = getPageTuples(whichPage);
+                    return it.hasNext();
+                }else{
+                    return false;
+                }
+            }else{
+                return true;
+            }
+        }
+ 
+        @Override
+        public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
+            // TODO Auto-generated method stub
+            if(it == null){
+                throw new IllegalStateException();
+            }
+            if(!it.hasNext()){
+                throw new NoSuchElementException();
+            }
+            return it.next();
+        }
+ 
+        @Override
+        public void rewind() throws DbException, TransactionAbortedException {
+            // TODO Auto-generated method stub
+            close();
+            open();
+        }
+ 
+        @Override
+        public void close() {
+            // TODO Auto-generated method stub
+            it = null;
+        }
+ 
+    }
+ 
 }
-
+ 
